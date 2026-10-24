@@ -1,14 +1,28 @@
 /**
  * THA CRIB — QUIET LUXURY AMBIENT SOUND SYSTEM
- * Pure Web Audio API — Soft Penthouse Rhodes chords, acoustic glass chimes, and tactile 3D clicks.
+ * Theme music: Lil Baby playlist streamed through a hidden YouTube player (auto-starts).
+ * Pure Web Audio API — acoustic glass chimes and tactile 3D clicks.
+ * Soft Penthouse Rhodes chords remain as an offline fallback if YouTube can't load.
  */
+
+// YouTube playlist used as the theme music ("Lil baby Hits").
+// Swap this id for any other public YouTube playlist to change the music.
+const THEME_PLAYLIST_ID = 'PLkhlkBjrynK3BWg31ymSAlSJqp2m3ANNa';
 
 class LuxuryAudioManager {
   constructor() {
     this.ctx = null;
     this.musicVolume = 0.65;
     this.sfxVolume = 0.8;
-    this.isMuted = true; // browser compliance
+    this.isMuted = false; // music on by default; starts on load or on the first tap if the browser blocks autoplay
+
+    // YouTube theme music state
+    this.playlistId = THEME_PLAYLIST_ID;
+    this.yt = null;
+    this.ytReady = false;
+    this.ytFailed = false;
+    this.shuffled = false;
+    this.lastTitle = '';
 
     this.musicGain = null;
     this.sfxGain = null;
@@ -23,6 +37,144 @@ class LuxuryAudioManager {
       [196.00, 293.66, 349.23, 440.00, 587.33], // Gmin9   (G3, D4, F4, A4, D5)
       [130.81, 196.00, 293.66, 349.23, 440.00]  // C13sus  (C3, G3, D4, F4, A4)
     ];
+
+    this.initYouTube();
+    this.armAutostart();
+  }
+
+  // ============================================================
+  // THEME MUSIC — hidden YouTube playlist player
+  // ============================================================
+  initYouTube() {
+    if (typeof document === 'undefined') return;
+    const mount = () => {
+      // YouTube needs a 200x200 player to play, so park it off-screen instead of display:none
+      const holder = document.createElement('div');
+      holder.id = 'yt-music-holder';
+      holder.setAttribute('aria-hidden', 'true');
+      holder.style.cssText =
+        'position:fixed;left:-10000px;top:0;width:200px;height:200px;opacity:0;pointer-events:none;';
+      const target = document.createElement('div');
+      target.id = 'yt-music';
+      holder.appendChild(target);
+      document.body.appendChild(holder);
+
+      const prevReady = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (typeof prevReady === 'function') prevReady();
+        this.createPlayer();
+      };
+
+      const s = document.createElement('script');
+      s.src = 'https://www.youtube.com/iframe_api';
+      s.async = true;
+      s.onerror = () => this.fallbackToRhodes();
+      document.head.appendChild(s);
+
+      // offline / blocked: fall back to the built-in Rhodes loop
+      this.ytTimeout = setTimeout(() => {
+        if (!this.ytReady) this.fallbackToRhodes();
+      }, 12000);
+    };
+    if (document.body) mount();
+    else document.addEventListener('DOMContentLoaded', mount);
+  }
+
+  createPlayer() {
+    if (!window.YT || !window.YT.Player) return this.fallbackToRhodes();
+    this.yt = new window.YT.Player('yt-music', {
+      width: 200,
+      height: 200,
+      playerVars: {
+        listType: 'playlist',
+        list: this.playlistId,
+        autoplay: 1,
+        controls: 0,
+        disablekb: 1,
+        playsinline: 1,
+        loop: 1,
+        rel: 0
+      },
+      events: {
+        onReady: () => {
+          this.ytReady = true;
+          clearTimeout(this.ytTimeout);
+          if (this.ytFailed) {
+            // YouTube showed up late — swap the fallback out
+            this.ytFailed = false;
+            this.stopAmbientLoop();
+          }
+          this.yt.setVolume(Math.round(this.musicVolume * 100));
+          this.yt.setLoop(true);
+          if (!this.isMuted) this.playMusic();
+        },
+        onStateChange: (e) => {
+          if (e.data !== window.YT.PlayerState.PLAYING) return;
+          // shuffle once the playlist has loaded so every visit sounds different
+          if (!this.shuffled) {
+            const list = this.yt.getPlaylist && this.yt.getPlaylist();
+            if (list && list.length) {
+              this.shuffled = true;
+              this.yt.setShuffle(true);
+            }
+          }
+          if (this.isMuted) {
+            this.yt.pauseVideo();
+            return;
+          }
+          const data = this.yt.getVideoData ? this.yt.getVideoData() : null;
+          const title = data && data.title;
+          if (title && title !== this.lastTitle) {
+            this.lastTitle = title;
+            window.dispatchEvent(new CustomEvent('crib:nowplaying', { detail: { title } }));
+          }
+        },
+        // video blocked from embedding / removed: skip it
+        onError: () => {
+          try { this.yt.nextVideo(); } catch (_) { /* ignore */ }
+        }
+      }
+    });
+  }
+
+  fallbackToRhodes() {
+    if (this.ytReady) return;
+    this.ytFailed = true;
+    clearTimeout(this.ytTimeout);
+    if (!this.isMuted && this.ctx && this.ctx.state === 'running') this.startAmbientLoop();
+  }
+
+  playMusic() {
+    if (this.isMuted) return;
+    if (this.ytReady && this.yt) {
+      this.yt.unMute();
+      this.yt.setVolume(Math.round(this.musicVolume * 100));
+      this.yt.playVideo();
+    } else if (this.ytFailed) {
+      this.ensureContext();
+      this.startAmbientLoop();
+    }
+  }
+
+  pauseMusic() {
+    if (this.ytReady && this.yt) this.yt.pauseVideo();
+    this.stopAmbientLoop();
+  }
+
+  // Browsers block sound until the user interacts with the page once.
+  // So: try right away, and also start on the very first tap / click / key press anywhere.
+  armAutostart() {
+    if (typeof document === 'undefined') return;
+    const events = ['pointerdown', 'touchstart', 'keydown'];
+    const unlock = () => {
+      this.ensureContext();
+      if (!this.isMuted) this.playMusic();
+      // keep listening until the player actually exists, then stop
+      if (this.ytReady || this.ytFailed) {
+        events.forEach((ev) => document.removeEventListener(ev, unlock, true));
+      }
+    };
+    events.forEach((ev) => document.addEventListener(ev, unlock, true));
   }
 
   ensureContext() {
@@ -54,11 +206,11 @@ class LuxuryAudioManager {
 
     if (this.isMuted) {
       this.masterGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
-      this.stopAmbientLoop();
+      this.pauseMusic();
       return false;
     } else {
       this.masterGain.gain.setTargetAtTime(1, this.ctx.currentTime, 0.1);
-      this.startAmbientLoop();
+      this.playMusic();
       this.playGlassChime();
       return true;
     }
@@ -69,6 +221,7 @@ class LuxuryAudioManager {
     if (this.musicGain && this.ctx) {
       this.musicGain.gain.setTargetAtTime(this.musicVolume, this.ctx.currentTime, 0.05);
     }
+    if (this.ytReady && this.yt) this.yt.setVolume(Math.round(this.musicVolume * 100));
   }
 
   setSfxVolume(pct) {

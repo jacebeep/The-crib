@@ -142,12 +142,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================================
   // 2. AUDIO TOGGLE & AMBIENT MUSIC
   // ============================================================
+  function syncSoundButton(isActive) {
+    soundToggleBtn.classList.toggle('active', isActive);
+    soundLabel.textContent = isActive ? 'Audio: ON' : 'Audio: OFF';
+  }
+  // music is on by default (audio.js auto-starts it)
+  syncSoundButton(!!(window.gameAudio && !window.gameAudio.isMuted));
+
   soundToggleBtn.addEventListener('click', () => {
     if (!window.gameAudio) return;
     const isActive = window.gameAudio.toggleSound();
-    soundToggleBtn.classList.toggle('active', isActive);
-    soundLabel.textContent = isActive ? 'Audio: ON' : 'Audio: OFF';
-    showToast(isActive ? '✨ Penthouse Ambient Rhodes Activated' : '🔇 Audio Muted');
+    syncSoundButton(isActive);
+    showToast(isActive ? '🎵 Lil Baby Playlist On' : '🔇 Audio Muted');
+  });
+
+  window.addEventListener('crib:nowplaying', (e) => {
+    const title = e.detail && e.detail.title;
+    if (title) showToast(`🎵 Now Playing: ${title}`);
   });
 
   // ============================================================
