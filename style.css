@@ -3618,9 +3618,20 @@ button, input, a { touch-action: manipulation; }
   .luxury-pill-btn span,
   #sound-label { display: none; }
 
-  /* main menu */
-  .menu-stage { padding: 70px 18px 28px; }
-  .title-block { margin-bottom: 30px; }
+  /* main menu: anchored to the bottom so the mansion fills the top of the screen */
+  .menu-stage {
+    justify-content: flex-end;
+    padding: 70px 20px 30px;
+    padding-bottom: calc(30px + env(safe-area-inset-bottom));
+  }
+
+  .title-block { margin-bottom: 22px; }
+
+  .luxury-vignette {
+    background:
+      linear-gradient(0deg, rgba(6, 7, 11, 0.94) 0%, rgba(6, 7, 11, 0.7) 30%, rgba(6, 7, 11, 0) 58%),
+      linear-gradient(180deg, rgba(6, 7, 11, 0.5) 0%, rgba(6, 7, 11, 0) 14%);
+  }
   .kicker-tag { gap: 8px; }
   .kicker-tag .hairline { width: 16px; }
   .kicker-text { font-size: 0.56rem; letter-spacing: 2.5px; }
@@ -3797,4 +3808,60 @@ button, input, a { touch-action: manipulation; }
   .board-toolbar { margin-top: 8px; }
   .modal-luxury-frame { max-height: 92vh; }
   .modal-content { max-height: calc(92vh - 130px); }
+}
+
+/* ============================================================
+   LIVE SYNC INDICATORS
+   ============================================================ */
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #6b7280;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sync-dot.live {
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: sync-pulse 2.4s ease-in-out infinite;
+}
+
+.sync-dot.connecting { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+.sync-dot.error { background: #f87171; box-shadow: 0 0 6px #f87171; }
+
+@keyframes sync-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* green dot on a profile's avatar while they're on their board */
+.ps-card.online .ps-avatar::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #34d399;
+  border: 2px solid #0b0d14;
+  box-shadow: 0 0 10px #34d399;
+  animation: sync-pulse 2.4s ease-in-out infinite;
+}
+
+.cb-on {
+  font-weight: 700;
+  color: #15803d;
+}
+
+.cb-on::before {
+  content: '\25CF\00a0';
+  color: #22c55e;
+}
+
+/* live redraws shouldn't replay the pop-in animation */
+.community-view.live-refresh .cb-person {
+  animation: none !important;
 }

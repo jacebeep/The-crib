@@ -162,13 +162,16 @@
         : 38;
       // Architectural "lens shift": push the house right so the menu on the left has room.
       this.baseShift = w > 900 ? -w * 0.13 : 0;
+      // Portrait phones: lift the house into the top of the screen, above the menu at the bottom.
+      this.baseShiftY = (w <= 600 && h > w) ? h * 0.14 : 0;
       this.applyViewOffset();
     }
 
     // lens shift is blended out during the entrance so the front door ends up centered
     applyViewOffset() {
       const w = window.innerWidth, h = window.innerHeight;
-      this.camera.setViewOffset(w, h, this.baseShift * this.viewShiftFactor, 0, w, h);
+      const f = this.viewShiftFactor;
+      this.camera.setViewOffset(w, h, this.baseShift * f, (this.baseShiftY || 0) * f, w, h);
       this.camera.updateProjectionMatrix();
     }
 

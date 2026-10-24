@@ -1,0 +1,28 @@
+{
+  "rules": {
+    ".read": true,
+    "boards": {
+      ".write": true,
+      "$profile": {
+        ".validate": "$profile === 'jace' || $profile === 'koda' || $profile === 'shayne'",
+        "deposits": {
+          "$deposit": {
+            ".validate": "newData.hasChildren(['c', 't']) && newData.child('c').isNumber() && newData.child('c').val() > 0 && newData.child('c').val() <= 100000000 && newData.child('t').isNumber()"
+          }
+        }
+      }
+    },
+    "presence": {
+      "$profile": {
+        ".validate": "$profile === 'jace' || $profile === 'koda' || $profile === 'shayne'",
+        "$device": { ".write": true }
+      }
+    },
+    "visits": {
+      "$profile": {
+        ".write": true,
+        ".validate": "($profile === 'jace' || $profile === 'koda' || $profile === 'shayne') && newData.isNumber()"
+      }
+    }
+  }
+}

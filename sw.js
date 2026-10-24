@@ -3,7 +3,7 @@
  * - code (html/css/js): network first, so new pushes show up right away; falls back to cache offline
  * - textures, models, fonts: cache first after the first visit
  */
-const CACHE = 'tha-crib-v1';
+const CACHE = 'tha-crib-v2';
 
 const CORE = [
   './',
@@ -12,6 +12,8 @@ const CORE = [
   './main.js',
   './mansion3d.js',
   './audio.js',
+  './sync.js',
+  './firebase-config.js',
   './manifest.webmanifest',
   './assets/three.min.js',
   './assets/GLTFLoader.js',
@@ -48,7 +50,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
   const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (!sameOrigin && !isFont) return;
+  const isSdk = url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/');
+  if (!sameOrigin && !isFont && !isSdk) return;
 
   if (sameOrigin && (req.mode === 'navigate' || isCode(url))) {
     // network first

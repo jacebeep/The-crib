@@ -309,17 +309,54 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // --- storage ---
-  const boardKey = (id) => `the_crib_board_${id}`;
-  function loadBoard(id) {
-    try {
-      const d = JSON.parse(localStorage.getItem(boardKey(id)));
-      if (d && Array.isArray(d.deposits)) return d;
-    } catch (err) { /* corrupted entry: start fresh */ }
-    return { deposits: [] };
-  }
-  const saveBoard = (id, d) => localStorage.setItem(boardKey(id), JSON.stringify(d));
+  // --- storage (live-synced between phones when Firebase is set up; see sync.js) ---
+  const sync = window.createCribSync({
+    profiles: PROFILES.map((p) => p.id),
+    onChange: onBoardsChanged,
+    onStatus: setSyncStatus,
+    onPresence: refreshPresence,
+    onRemoteDeposit: (id, entry) => {
+      const who = PROFILES.find((p) => p.id === id);
+      if (!who || crib.state === 'menu') return;
+      showToast(`💸 ${who.name} just put in ${fmt(entry.c)}!`);
+      sfx('playCashChime');
+    }
+  });
+
+  const loadBoard = (id) => ({ deposits: sync.get(id) });
   const savedOf = (d) => d.deposits.reduce((s, x) => s + (Number(x.c) || 0), 0);
+
+  // someone (here or on another phone) changed a board: redraw whatever is open
+  function onBoardsChanged(id) {
+    if (crib.state === 'board' && crib.profile && crib.profile.id === id) updateBoard();
+    if (crib.state === 'community') refreshCommunityLive();
+  }
+
+  // who's online / last visits changed
+  function refreshPresence() {
+    psCards.querySelectorAll('.ps-card').forEach((card) => {
+      const id = card.dataset.profile;
+      const on = sync.isOnline(id);
+      card.classList.toggle('online', on);
+      const t = card.querySelector('.ps-meta-time');
+      if (t) t.textContent = on ? '🟢 On now' : timeAgo(sync.lastVisit(id));
+    });
+    if (crib.state === 'community') refreshCommunityLive();
+  }
+
+  const syncDot = $('sync-dot');
+  const SYNC_LABELS = {
+    live: 'Live: syncing with everyone',
+    connecting: 'Reconnecting… changes will sync when back online',
+    local: 'Saved on this device only',
+    error: 'Sync problem: check the Firebase database rules'
+  };
+  function setSyncStatus(status) {
+    if (!syncDot) return;
+    syncDot.className = `sync-dot ${status}`;
+    syncDot.title = SYNC_LABELS[status] || '';
+    syncDot.setAttribute('aria-label', SYNC_LABELS[status] || 'Sync status');
+  }
 
   function timeAgo(ts) {
     if (!ts) return 'First visit';
@@ -344,9 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastId = localStorage.getItem('the_crib_active_profile');
     psCards.classList.remove('has-choice');
     psCards.innerHTML = PROFILES.map((p, i) => {
-      const lastVisit = Number(localStorage.getItem(`the_crib_last_visit_${p.id}`)) || 0;
+      const lastVisit = sync.lastVisit(p.id);
+      const on = sync.isOnline(p.id);
       return `
-        <button class="ps-card" id="profile-card-${p.id}" data-profile="${p.id}" style="${profileVars(p)};--i:${i}" aria-label="Unlock ${p.name}'s board">
+        <button class="ps-card${on ? ' online' : ''}" id="profile-card-${p.id}" data-profile="${p.id}" style="${profileVars(p)};--i:${i}" aria-label="Unlock ${p.name}'s board">
           <span class="ps-card-glow"></span>
           <span class="ps-key">${i + 1}</span>
           ${lastId === p.id ? '<span class="ps-badge">LAST ACTIVE</span>' : ''}
@@ -358,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="ps-name">${p.name}</span>
           <span class="ps-role">${p.role}</span>
           <span class="ps-lockline">${LOCK_SVG} Code Required</span>
-          <span class="ps-meta"><span>🌴 Florida Board</span><span>${timeAgo(lastVisit)}</span></span>
+          <span class="ps-meta"><span>🌴 Florida Board</span><span class="ps-meta-time">${on ? '🟢 On now' : timeAgo(lastVisit)}</span></span>
           <span class="ps-enter">UNLOCK
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
           </span>
@@ -475,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sfx('playProfileSelect');
 
     localStorage.setItem('the_crib_active_profile', p.id);
-    localStorage.setItem(`the_crib_last_visit_${p.id}`, String(Date.now()));
+    sync.markVisit(p.id);
 
     setTimeout(() => {
       psWelcomeName.textContent = `Welcome home, ${p.name}`;
@@ -600,13 +638,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const rows = d.deposits
-      .map((x, idx) => ({ ...x, idx }))
+      .slice()
       .reverse()
       .map((x) => `
         <li>
           <span class="dl-amt">+${fmt(x.c)}</span>
           <span class="dl-date">${dateText(x.t)}</span>
-          <button type="button" class="dl-del" data-idx="${x.idx}" title="Erase this entry" aria-label="Erase ${fmt(x.c)} entry">×</button>
+          <button type="button" class="dl-del" data-key="${x.k}" title="Erase this entry" aria-label="Erase ${fmt(x.c)} entry">×</button>
         </li>`)
       .join('');
     depositLog.innerHTML = `${rows}<li class="dl-total">Total in: ${fmt(savedOf(d))}</li>`;
@@ -616,6 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (crib.state !== 'moving' || !crib.profile) return;
     crib.state = 'board';
     boardView.classList.add('open');
+    sync.setPresence(crib.profile.id);
     sfx('playMarker');
     // let the board settle in, then "draw" the progress
     setTimeout(() => { if (crib.state === 'board') updateBoard(); }, 700);
@@ -624,6 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeBoard() {
     boardView.classList.remove('open');
     depositAmount.blur();
+    sync.setPresence(null);
   }
 
   // --- Put Money In ---
@@ -656,8 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const d = loadBoard(p.id);
     const { parts } = splitFor(savedOf(d), amt, p);
-    d.deposits.push({ c: amt, t: Date.now() });
-    saveBoard(p.id, d);
+    sync.add(p.id, amt);
 
     depositAmount.value = '';
     sfx('playMarker');
@@ -677,12 +716,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const p = crib.profile;
     if (!btn || !p) return;
     const d = loadBoard(p.id);
-    const idx = Number(btn.dataset.idx);
-    const entry = d.deposits[idx];
+    const entry = d.deposits.find((x) => x.k === btn.dataset.key);
     if (!entry) return;
     if (!confirm(`Erase the ${fmt(entry.c)} entry from ${dateText(entry.t)}?`)) return;
-    d.deposits.splice(idx, 1);
-    saveBoard(p.id, d);
+    sync.remove(p.id, entry.k);
     sfx('playClick');
     updateBoard();
     showToast(`🧽 Erased ${fmt(entry.c)} from the board`);
@@ -775,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="cb-avatar">${x.p.initial}</span>
             <div>
               <h3 class="cb-name">${x.p.name}</h3>
-              <span class="cb-role">${x.p.role}</span>
+              <span class="cb-role">${x.p.role}${sync.isOnline(x.p.id) ? ' · <b class="cb-on">on now</b>' : ''}</span>
             </div>
             <span class="cb-rank" title="Rank #${x.rank}">${x.saved > 0 ? (MEDALS[x.rank - 1] || `#${x.rank}`) : ''}</span>
           </header>
@@ -846,6 +883,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // redraw in place when live data arrives (no re-animation, keeps scroll position)
+  function refreshCommunityLive() {
+    const surface = $('cb-surface');
+    const top = surface.scrollTop;
+    communityView.classList.add('live-refresh');
+    renderCommunity();
+    animateCommunity();
+    surface.scrollTop = top;
+  }
+
   function openCommunity() {
     if (crib.state !== 'moving') return;
     crib.state = 'community';
@@ -862,6 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
     crib.profile = null;
     sfx('playClick');
     hideProfileSelect();
+    communityView.classList.remove('live-refresh');
     renderCommunity();
     const scene = window.luxury3d;
     const walk = scene && scene.goToBoard ? scene.goToBoard(onCineEvent) : Promise.resolve();
@@ -876,6 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
     crib.communityFrom = 'board';
     sfx('playClick');
     closeBoard();
+    communityView.classList.remove('live-refresh');
     renderCommunity();
     setTimeout(openCommunity, 380);
   }
@@ -998,6 +1047,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnResetData.addEventListener('click', () => {
+    if (sync.cloud) {
+      // live mode: this wipes the shared boards on every phone, so make it deliberate
+      const typed = prompt('This erases EVERYONE\'s money log on every phone.\nType RESET to confirm.');
+      if ((typed || '').trim().toUpperCase() !== 'RESET') return;
+      sync.resetAll()
+        .then(() => showToast('⚠️ All Florida boards reset for everyone.'))
+        .catch(() => showToast('❌ Reset failed. Check your connection.'));
+      return;
+    }
     if (confirm('Erase every Florida board money log saved on this device?')) {
       localStorage.clear();
       showToast('⚠️ All Florida boards reset.');

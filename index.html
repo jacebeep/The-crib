@@ -32,6 +32,7 @@
     <div class="brand-monogram">
       <span class="monogram-diamond">◆</span>
       <span class="monogram-title">THA CRIB</span>
+      <span class="sync-dot" id="sync-dot" title="Saved on this device" aria-label="Sync status"></span>
       <span class="monogram-sub">ESTATE V1.0</span>
     </div>
 
@@ -534,6 +535,11 @@ git push -u origin main</code></pre>
   <script src="assets/js/Lensflare.js"></script>
   <script src="mansion3d.js"></script>
   <script src="audio.js"></script>
+  <!-- Live sync between phones (Firebase Realtime Database) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="sync.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
