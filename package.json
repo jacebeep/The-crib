@@ -1,0 +1,18 @@
+{
+  "name": "tha-crib",
+  "version": "1.0.0",
+  "description": "Tha Crib - Luxury 3D Savings Game Menu",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -l 3000",
+    "dev": "npx serve -l 3000"
+  },
+  "keywords": [
+    "savings-game",
+    "the-crib",
+    "luxury",
+    "3d-menu"
+  ],
+  "author": "",
+  "license": "MIT"
+}

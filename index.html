@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#07080d">
+  <title>Tha Crib — Quiet Luxury Real Estate & Wealth Simulation</title>
+  <meta name="description" content="Tha Crib - Real-time 3D luxury architectural estate simulation and wealth management.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=Permanent+Marker&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-champagne">
+  
+  <!-- REAL-TIME 3D WEBGL MANSION CANVAS CONTAINER (No static pictures!) -->
+  <div id="canvas-container-3d" class="webgl-canvas-container"></div>
+
+  <!-- Subtle Cinematic Atmospheric Overlays -->
+  <div class="luxury-vignette"></div>
+  <div class="luxury-noise-overlay"></div>
+
+  <!-- Top Minimalist Luxury Bar -->
+  <header class="top-bar">
+    <div class="brand-monogram">
+      <span class="monogram-diamond">◆</span>
+      <span class="monogram-title">THA CRIB</span>
+      <span class="monogram-sub">ESTATE V1.0</span>
+    </div>
+
+    <!-- Quick Theme & Sound Controls -->
+    <div class="top-actions">
+      <!-- Theme Accent Switcher -->
+      <div class="theme-switcher" title="Select Luxury Theme Accent">
+        <button class="theme-dot dot-champagne active" data-theme="champagne" title="Champagne Gold"></button>
+        <button class="theme-dot dot-platinum" data-theme="platinum" title="Ice Platinum"></button>
+        <button class="theme-dot dot-rosegold" data-theme="rosegold" title="Rose Gold"></button>
+        <button class="theme-dot dot-emerald" data-theme="emerald" title="Imperial Emerald"></button>
+      </div>
+
+      <!-- GitHub Server / Hosting Guide -->
+      <button id="btn-deploy-info" class="luxury-pill-btn" title="GitHub Server & Pages Guide">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 13.9 22 12A10 10 0 0 0 12 2z"/>
+        </svg>
+        <span>GitHub Ready</span>
+      </button>
+
+      <!-- Ambient Audio Toggle -->
+      <button id="btn-sound-toggle" class="luxury-audio-btn" title="Toggle Penthouse Ambient Music">
+        <div class="audio-bars" id="audio-wave-bars">
+          <span class="bar b1"></span>
+          <span class="bar b2"></span>
+          <span class="bar b3"></span>
+        </div>
+        <span id="sound-label">Audio: OFF</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 3D Interactive Interface Stage -->
+  <main class="menu-stage">
+    
+    <!-- Central Luxury Title Block -->
+    <div class="title-block" id="title-block">
+      <div class="kicker-tag">
+        <span class="hairline"></span>
+        <span class="kicker-text">ARCHITECTURAL WEALTH & ESTATE SIMULATION</span>
+        <span class="hairline"></span>
+      </div>
+
+      <h1 class="hero-title" id="hero-title">
+        <span class="title-part">THA</span>
+        <span class="title-part gold-serif">CRIB</span>
+      </h1>
+
+      <p class="hero-subtext">Acquire Assets &bull; Compound Capital &bull; Own The Estate</p>
+
+      <div class="gold-hairline-accent"></div>
+    </div>
+
+    <!-- 3D Minimalist Luxury Buttons -->
+    <div class="buttons-column" id="buttons-column">
+      
+      <!-- 3D START GAME BUTTON -->
+      <button class="btn-luxury-3d btn-start" id="btn-start">
+        <div class="btn-slab-shadow"></div>
+        <div class="btn-slab-edge"></div>
+        <div class="btn-slab-face">
+          <span class="btn-index">01</span>
+          <div class="btn-titles">
+            <span class="btn-title-main">START GAME</span>
+            <span class="btn-title-sub">Enter The Crib &amp; Choose Your Profile</span>
+          </div>
+          <div class="btn-chevron">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+            </svg>
+          </div>
+          <div class="btn-gold-sheen"></div>
+        </div>
+      </button>
+
+      <!-- 3D SETTINGS BUTTON -->
+      <button class="btn-luxury-3d btn-settings" id="btn-settings">
+        <div class="btn-slab-shadow"></div>
+        <div class="btn-slab-edge"></div>
+        <div class="btn-slab-face">
+          <span class="btn-index">02</span>
+          <div class="btn-titles">
+            <span class="btn-title-main">SETTINGS</span>
+            <span class="btn-title-sub">3D Camera, Graphics & Sound Controls</span>
+          </div>
+          <div class="btn-chevron">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+            </svg>
+          </div>
+          <div class="btn-gold-sheen"></div>
+        </div>
+      </button>
+
+    </div>
+
+    <!-- Bottom Quiet Luxury Estate Ticker -->
+    <div class="estate-ticker">
+      <div class="ticker-item">
+        <span class="ticker-lbl">PORTFOLIO TARGET</span>
+        <span class="ticker-val">$10,000,000</span>
+      </div>
+      <span class="ticker-div">|</span>
+      <div class="ticker-item">
+        <span class="ticker-lbl">ESTATE MODEL</span>
+        <span class="ticker-val">BEL-AIR CANTILEVER 3D</span>
+      </div>
+      <span class="ticker-div">|</span>
+      <div class="ticker-item">
+        <span class="ticker-lbl">STATUS</span>
+        <span class="ticker-val live-green">ENGINE ONLINE</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- ENTRANCE CINEMATIC LAYERS                                    -->
+  <!-- ============================================================ -->
+  <div class="cine-bars" aria-hidden="true"></div>
+  <div class="threshold-glow" id="threshold-glow" aria-hidden="true"></div>
+  <div class="cine-caption" aria-hidden="true">
+    <span class="cine-caption-kicker" id="cine-caption-kicker">NOW ARRIVING</span>
+    <span class="cine-caption-title">Tha Crib &middot; Bel-Air</span>
+  </div>
+  <button class="btn-skip-cine" id="btn-skip-cine" title="Skip cinematic (Esc)">
+    <span>SKIP</span>
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M5 5l8 7-8 7V5zm9 0h3v14h-3V5z"/></svg>
+  </button>
+
+  <!-- ============================================================ -->
+  <!-- PROFILE SELECT (inside the foyer)                            -->
+  <!-- ============================================================ -->
+  <section class="profile-select" id="profile-select" aria-labelledby="profile-select-title">
+    <div class="ps-header">
+      <div class="ps-kicker">
+        <span class="hairline"></span>
+        <span class="kicker-text">THE FOYER &middot; WELCOME HOME</span>
+        <span class="hairline"></span>
+      </div>
+      <h2 class="ps-title" id="profile-select-title">Who's <span class="gold-serif">Home?</span></h2>
+      <p class="ps-sub">Select your profile &amp; enter your code to see your board</p>
+    </div>
+
+    <div class="ps-cards" id="ps-cards"></div>
+
+    <div class="ps-footer">
+      <button class="btn-ghost ps-leave" id="btn-leave-crib">&larr; Leave The Crib</button>
+      <button class="btn-ghost ps-community" id="btn-community">&#127796; Community Board</button>
+      <span class="ps-hint">Press <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> to choose</span>
+    </div>
+
+    <!-- Passcode prompt for the chosen profile -->
+    <div class="ps-pass" id="ps-pass">
+      <form class="ps-pass-card" id="ps-pass-form" autocomplete="off">
+        <span class="ps-pass-avatar" id="ps-pass-avatar">
+          <span class="ps-avatar-ring"></span>
+          <span class="ps-initial" id="ps-pass-initial">J</span>
+          <span class="ps-pass-lock" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9z"/></svg>
+          </span>
+        </span>
+        <h3 class="ps-pass-title" id="ps-pass-title">Enter Jace's Code</h3>
+        <p class="ps-pass-sub">This board is private. Only the owner knows the code.</p>
+        <label class="sr-only" for="ps-pass-input">Passcode</label>
+        <div class="ps-pass-field">
+          <input type="password" id="ps-pass-input" placeholder="Passcode" spellcheck="false" autocapitalize="off">
+          <button type="button" class="ps-pass-eye" id="ps-pass-eye" aria-label="Show code">SHOW</button>
+        </div>
+        <p class="ps-pass-error" id="ps-pass-error" role="alert"></p>
+        <div class="ps-pass-actions">
+          <button type="button" class="btn-ghost" id="ps-pass-back">&larr; Back</button>
+          <button type="submit" class="ps-pass-submit" id="ps-pass-submit">Unlock Board</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="ps-welcome" aria-live="polite">
+      <span class="ps-welcome-kicker">ACCESS GRANTED</span>
+      <span class="ps-welcome-name" id="ps-welcome-name"></span>
+      <span class="ps-welcome-line"></span>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- OVERVIEW WHITEBOARD (hangs on the west wall of the mansion)  -->
+  <!-- ============================================================ -->
+  <section class="board-view" id="board-view" aria-labelledby="wb-title">
+    <!-- marker-edge roughness filter shared by the rings + bars -->
+    <svg class="sr-only" aria-hidden="true" focusable="false">
+      <filter id="marker-rough">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/>
+      </filter>
+    </svg>
+
+    <div class="whiteboard" id="whiteboard">
+      <div class="wb-surface">
+        <header class="wb-head">
+          <div class="wb-title-wrap">
+            <span class="wb-kicker">Operation Florida &#127796;</span>
+            <h2 class="wb-title" id="wb-title">Jace's Florida Fund</h2>
+            <svg class="wb-squiggle" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 60 2, 110 13, 170 6 S 260 4, 298 8"/></svg>
+          </div>
+          <div class="wb-goal">
+            <span class="wb-goal-lbl">GOAL
+              <svg class="wb-goal-circle" viewBox="0 0 160 70" preserveAspectRatio="none" aria-hidden="true"><path d="M20 38 C 18 12, 140 4, 150 30 C 158 56, 40 70, 14 48 C 4 38, 30 18, 60 14"/></svg>
+            </span>
+            <span class="wb-goal-val" id="wb-goal-val">$0.00</span>
+            <span class="wb-goal-sub" id="wb-goal-sub"></span>
+          </div>
+        </header>
+
+        <div class="wb-overall">
+          <div class="wb-overall-top">
+            <span class="wb-overall-lbl">Saved so far</span>
+            <span class="wb-overall-num" id="wb-overall-num">$0.00</span>
+            <span class="wb-overall-pct" id="wb-overall-pct">0%</span>
+          </div>
+          <div class="wb-track">
+            <span class="wb-track-fill" id="wb-track-fill"></span>
+            <span class="wb-plane" id="wb-plane" aria-hidden="true">&#9992;&#65039;</span>
+            <span class="wb-palm" aria-hidden="true">&#127796;</span>
+          </div>
+        </div>
+
+        <div class="wb-body">
+          <div class="wb-grid" id="wb-grid"></div>
+
+          <aside class="wb-side">
+            <!-- Update section: put money in -->
+            <form class="sticky sticky-yellow" id="deposit-form" novalidate>
+              <span class="sticky-magnet" aria-hidden="true"></span>
+              <h3 class="sticky-title">Put Money In</h3>
+              <label class="sr-only" for="deposit-amount">Amount to put in</label>
+              <div class="deposit-input">
+                <span>$</span>
+                <input type="number" id="deposit-amount" min="0.01" step="0.01" inputmode="decimal" placeholder="730.00">
+              </div>
+              <div class="deposit-quick" id="deposit-quick">
+                <button type="button" data-add="25">+25</button>
+                <button type="button" data-add="50">+50</button>
+                <button type="button" data-add="100">+100</button>
+                <button type="button" data-add="250">+250</button>
+              </div>
+              <button type="submit" class="deposit-btn" id="btn-deposit">Add It &#9997;&#65039;</button>
+              <div class="deposit-preview" id="deposit-preview"></div>
+            </form>
+
+            <!-- Deposit history -->
+            <div class="sticky sticky-pink">
+              <span class="sticky-magnet magnet-blue" aria-hidden="true"></span>
+              <h3 class="sticky-title">Money Log</h3>
+              <ul class="deposit-log" id="deposit-log"></ul>
+            </div>
+          </aside>
+        </div>
+
+        <div class="wb-stamp" id="wb-stamp" aria-hidden="true">FLORIDA<br>READY!</div>
+      </div>
+
+      <!-- aluminium marker tray -->
+      <div class="wb-tray" aria-hidden="true">
+        <span class="wb-marker" style="--ink:#1d4ed8"></span>
+        <span class="wb-marker" style="--ink:#dc2626"></span>
+        <span class="wb-marker" style="--ink:#15803d"></span>
+        <span class="wb-marker" style="--ink:#111827"></span>
+        <span class="wb-eraser"></span>
+      </div>
+    </div>
+
+    <div class="board-toolbar">
+      <button class="hud-btn" id="btn-board-switch">&larr; Switch Profile</button>
+      <button class="hud-btn" id="btn-board-community">&#127796; Community Board</button>
+      <button class="hud-btn" id="btn-board-leave">Leave The Crib</button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- COMMUNITY WHITEBOARD (everyone's progress + crib total)      -->
+  <!-- ============================================================ -->
+  <section class="board-view community-view" id="community-view" aria-labelledby="cb-title">
+    <div class="whiteboard" id="community-board">
+      <div class="wb-surface" id="cb-surface">
+        <header class="wb-head">
+          <div class="wb-title-wrap">
+            <span class="wb-kicker">Operation Florida &middot; The Whole Crib &#127796;</span>
+            <h2 class="wb-title" id="cb-title">Community Board</h2>
+            <svg class="wb-squiggle" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 60 2, 110 13, 170 6 S 260 4, 298 8"/></svg>
+          </div>
+          <div class="wb-goal">
+            <span class="wb-goal-lbl">TOTAL
+              <svg class="wb-goal-circle" viewBox="0 0 160 70" preserveAspectRatio="none" aria-hidden="true"><path d="M20 38 C 18 12, 140 4, 150 30 C 158 56, 40 70, 14 48 C 4 38, 30 18, 60 14"/></svg>
+            </span>
+            <span class="wb-goal-val" id="cb-total-val">$0.00</span>
+            <span class="wb-goal-sub" id="cb-total-sub"></span>
+          </div>
+        </header>
+
+        <div class="wb-overall">
+          <div class="wb-overall-top">
+            <span class="wb-overall-lbl">Crib saved together</span>
+            <span class="wb-overall-num" id="cb-overall-num">$0.00</span>
+            <span class="wb-overall-pct" id="cb-overall-pct">0%</span>
+          </div>
+          <div class="wb-track">
+            <span class="cb-track-fill" id="cb-track-fill"></span>
+            <span class="wb-plane" id="cb-plane" aria-hidden="true">&#9992;&#65039;</span>
+            <span class="wb-palm" aria-hidden="true">&#127796;</span>
+          </div>
+          <div class="cb-legend" id="cb-legend"></div>
+        </div>
+
+        <div class="wb-body">
+          <div class="cb-people" id="cb-people"></div>
+
+          <aside class="wb-side">
+            <div class="sticky sticky-yellow">
+              <span class="sticky-magnet" aria-hidden="true"></span>
+              <h3 class="sticky-title">Leaderboard</h3>
+              <ol class="cb-lead" id="cb-lead"></ol>
+            </div>
+
+            <div class="sticky sticky-pink">
+              <span class="sticky-magnet magnet-blue" aria-hidden="true"></span>
+              <h3 class="sticky-title">Crib Activity</h3>
+              <ul class="deposit-log cb-feed" id="cb-feed"></ul>
+            </div>
+          </aside>
+        </div>
+
+        <div class="wb-stamp" aria-hidden="true">CRIB<br>READY!</div>
+      </div>
+
+      <div class="wb-tray" aria-hidden="true">
+        <span class="wb-marker" style="--ink:#a16207"></span>
+        <span class="wb-marker" style="--ink:#0369a1"></span>
+        <span class="wb-marker" style="--ink:#9333ea"></span>
+        <span class="wb-eraser"></span>
+      </div>
+    </div>
+
+    <div class="board-toolbar">
+      <button class="hud-btn" id="btn-community-back">&larr; Back</button>
+      <button class="hud-btn" id="btn-community-leave">Leave The Crib</button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: SETTINGS                                              -->
+  <!-- ============================================================ -->
+  <div class="modal-backdrop" id="modal-settings">
+    <div class="modal-luxury-frame" id="modal-settings-card">
+      <div class="modal-top">
+        <div class="modal-badge-group">
+          <span class="badge-tag">ENVIRONMENT CONFIGURATION</span>
+          <h2>System Settings</h2>
+        </div>
+        <button class="modal-close" data-close="modal-settings">&times;</button>
+      </div>
+
+      <div class="modal-content settings-content">
+        <!-- Audio -->
+        <div class="setting-block">
+          <h4 class="setting-category">Acoustic Atmosphere</h4>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="item-title">Penthouse Ambient Music</span>
+              <span class="item-desc">Analog Rhodes twilight chord progressions</span>
+            </div>
+            <div class="slider-box">
+              <input type="range" id="slider-music" min="0" max="100" value="65">
+              <span class="slider-readout" id="val-music">65%</span>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="item-title">Tactile Audio Feedback (SFX)</span>
+              <span class="item-desc">Champagne glass pings & solid obsidian clicks</span>
+            </div>
+            <div class="slider-box">
+              <input type="range" id="slider-sfx" min="0" max="100" value="80">
+              <span class="slider-readout" id="val-sfx">80%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3D Graphics -->
+        <div class="setting-block">
+          <h4 class="setting-category">3D Camera & Model Fidelity</h4>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="item-title">3D Mouse Camera Parallax</span>
+              <span class="item-desc">Orbit and glide the 3D camera with mouse movement</span>
+            </div>
+            <label class="luxury-switch">
+              <input type="checkbox" id="toggle-parallax" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="item-title">Infinity Pool Water Displacement</span>
+              <span class="item-desc">Real-time undulating water vertex ripples</span>
+            </div>
+            <label class="luxury-switch">
+              <input type="checkbox" id="toggle-water" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Data -->
+        <div class="setting-block">
+          <h4 class="setting-category">Saved Data</h4>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="item-title">Reset All Florida Boards</span>
+              <span class="item-desc">Erases every profile's money log on this device</span>
+            </div>
+            <button id="btn-reset-data" class="btn-danger-ghost">Reset All Data</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-bottom">
+        <span class="sync-indicator">Config saved automatically</span>
+        <button class="btn-ghost" data-close="modal-settings">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: GITHUB DEPLOYMENT GUIDE                               -->
+  <!-- ============================================================ -->
+  <div class="modal-backdrop" id="modal-deploy">
+    <div class="modal-luxury-frame" id="modal-deploy-card">
+      <div class="modal-top">
+        <div class="modal-badge-group">
+          <span class="badge-tag">SERVER & HOSTING GUIDE</span>
+          <h2>Run "Tha Crib" On GitHub</h2>
+        </div>
+        <button class="modal-close" data-close="modal-deploy">&times;</button>
+      </div>
+
+      <div class="modal-content">
+        <p class="modal-desc">This game runs completely in the browser with 3D WebGL and zero backend server requirements! Deploy to GitHub Pages in 3 steps:</p>
+        
+        <div class="steps-column">
+          <div class="step-card">
+            <div class="step-index">01</div>
+            <div class="step-details">
+              <h4>Create a Repository on GitHub</h4>
+              <p>Visit <a href="https://github.com/new" target="_blank" rel="noreferrer">github.com/new</a> and name it <code>the-crib</code>.</p>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-index">02</div>
+            <div class="step-details">
+              <h4>Push Local Files</h4>
+              <pre><code>git init
+git add .
+git commit -m "Initialize Tha Crib 3D"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/the-crib.git
+git push -u origin main</code></pre>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-index">03</div>
+            <div class="step-details">
+              <h4>Enable Free GitHub Pages Server</h4>
+              <p>In your GitHub repository, open <strong>Settings</strong> &rarr; <strong>Pages</strong>. Under <em>Branch</em>, select <code>main</code> and save.</p>
+              <p class="gold-box">Your 3D game will be live globally at: <code>https://YOUR_USERNAME.github.io/the-crib/</code></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-bottom">
+        <button class="btn-ghost" data-close="modal-deploy">Understood</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Feedback Toast -->
+  <div class="luxury-toast" id="toast-notify"></div>
+
+  <!-- Scripts: Three.js r128 + example modules, 3D estate, audio, UI controller -->
+  <script src="assets/three.min.js"></script>
+  <script src="assets/GLTFLoader.js"></script>
+  <script src="assets/js/DRACOLoader.js"></script>
+  <script src="assets/js/Sky.js"></script>
+  <script src="assets/js/Water.js"></script>
+  <script src="assets/js/Lensflare.js"></script>
+  <script src="mansion3d.js"></script>
+  <script src="audio.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
