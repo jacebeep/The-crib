@@ -349,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     live: 'Live: syncing with everyone',
     connecting: 'Reconnecting… changes will sync when back online',
     local: 'Saved on this device only',
+    nodb: 'Live database not set up yet: saving on this device for now',
     error: 'Sync problem: check the Firebase database rules'
   };
   function setSyncStatus(status) {

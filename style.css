@@ -3830,6 +3830,7 @@ button, input, a { touch-action: manipulation; }
 
 .sync-dot.connecting { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
 .sync-dot.error { background: #f87171; box-shadow: 0 0 6px #f87171; }
+.sync-dot.nodb { background: #f97316; box-shadow: 0 0 6px #f97316; }
 
 @keyframes sync-pulse {
   0%, 100% { opacity: 1; }
