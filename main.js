@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (a && typeof a[name] === 'function') a[name](...args);
   };
 
+  // installable app + offline support (needs http/https, e.g. GitHub Pages)
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* non-fatal */ });
+  }
+
   // --- DOM Elements ---
   const all3DButtons = document.querySelectorAll('.btn-luxury-3d');
 
