@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const psCards = $('ps-cards');
   const psWelcomeName = $('ps-welcome-name');
   const btnLeaveCrib = $('btn-leave-crib');
+  const btnCommunity = $('btn-community');
   const btnSkipCine = $('btn-skip-cine');
   const thresholdGlow = $('threshold-glow');
   const cineCaptionKicker = $('cine-caption-kicker');
