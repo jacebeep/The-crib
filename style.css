@@ -4492,31 +4492,175 @@ button, input, a { touch-action: manipulation; }
 }
 
 /* ------------------------------------------------------------
-   Responsive Optimizations for Mobile
+   Responsive Optimizations for Mobile (Marcus Chat Shrunk & Bottom-Right)
    ------------------------------------------------------------ */
 @media (max-width: 768px) {
   .bar-view {
-    padding: 12px;
+    padding: 0;
+    justify-content: flex-end;
+    align-items: flex-end; /* Pin to bottom right */
+    pointer-events: none;
   }
 
+  /* Fixed HUD close & mute buttons at top right */
+  .bar-head {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top, 12px));
+    right: max(12px, env(safe-area-inset-right, 12px));
+    z-index: 200;
+    padding: 0;
+    margin: 0;
+    pointer-events: auto;
+  }
+
+  .bar-icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .bar-icon-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* Shrunk Chat Container in the Bottom Right */
   .bar-panel {
-    width: 100%;
-    max-width: 100%;
+    position: relative;
+    width: min(300px, 76vw);
+    max-width: 320px;
+    height: auto;
+    max-height: min(360px, 48vh);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
     background: transparent;
     border: none;
     box-shadow: none;
-    padding-bottom: env(safe-area-inset-bottom, 12px);
+    margin: 0;
+    padding: 0 max(10px, env(safe-area-inset-right, 10px)) max(10px, env(safe-area-inset-bottom, 10px)) 0;
+    pointer-events: auto;
+    transform: translateY(16px);
+    opacity: 0;
+  }
+
+  .bar-view.open .bar-panel {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Compact Chat Stream */
+  .bar-log {
+    flex: 1;
+    min-height: 0;
+    max-height: 250px;
+    padding: 4px 2px 6px 2px;
+    gap: 6px;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 100%);
+  }
+
+  .bb-row {
+    max-width: 100%;
+  }
+
+  .bb-name {
+    font-size: 0.64rem;
+    margin-bottom: 2px;
+    padding: 0 2px;
+  }
+
+  .bb-marcus .bb-name::before,
+  .bb-you .bb-name::before {
+    font-size: 0.52rem;
+    padding: 1px 4px;
+  }
+
+  .bb-bubble {
+    font-size: 0.8rem;
+    line-height: 1.36;
+    padding: 6px 10px;
+    border-radius: 12px;
+  }
+
+  .bb-verdict {
+    margin-top: 6px;
+    padding: 5px 8px;
+    gap: 6px;
+    border-radius: 8px;
+  }
+
+  .bv-stamp {
+    width: 24px;
+    height: 24px;
+    font-size: 0.82rem;
+  }
+
+  .bv-label {
+    font-size: 0.55rem;
+    letter-spacing: 1px;
+  }
+
+  .bv-title {
+    font-size: 0.74rem;
+  }
+
+  .bv-impact {
+    font-size: 0.62rem;
+  }
+
+  /* Compact Input Box Pill */
+  .bar-input {
+    margin: 4px 0 0 0;
+    padding: 4px 5px 4px 10px;
+    gap: 6px;
+    border-radius: 999px;
+    background: rgba(10, 12, 19, 0.75);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(212, 175, 55, 0.12);
+  }
+
+  #bar-input {
+    font-size: 0.8rem;
+    padding: 5px 2px;
+  }
+
+  #bar-input::placeholder {
+    font-size: 0.76rem;
+  }
+
+  .bar-mic,
+  .bar-send {
+    width: 30px;
+    height: 30px;
+  }
+
+  .bar-mic svg,
+  .bar-send svg {
+    width: 14px;
+    height: 14px;
   }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
   .bar-view {
-    padding: 8px 12px;
+    padding: 0;
+    justify-content: flex-end;
+    align-items: flex-end;
+  }
+
+  .bar-head {
+    position: fixed;
+    top: 8px;
+    right: 8px;
   }
 
   .bar-panel {
-    width: min(400px, 50vw);
-    background: transparent;
+    width: min(280px, 44vw);
+    max-height: 82vh;
+    padding: 0 8px 6px 0;
+  }
+
+  .bar-log {
+    max-height: 160px;
   }
 }
 
