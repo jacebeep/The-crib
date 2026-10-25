@@ -15,9 +15,45 @@
   const LS_VISIT = (id) => `the_crib_last_visit_${id}`;
   const LS_MIGRATED = (id) => `the_crib_migrated_${id}`;
 
+  const VAULT_SALT = 'tha_crib_secure_vault_v1';
+  function encryptPayload(obj) {
+    try {
+      const json = JSON.stringify(obj);
+      let out = '';
+      for (let i = 0; i < json.length; i++) {
+        const code = json.charCodeAt(i) ^ VAULT_SALT.charCodeAt(i % VAULT_SALT.length) ^ ((i * 7 + 13) & 0xff);
+        out += code.toString(16).padStart(2, '0');
+      }
+      return JSON.stringify({ v: 2, enc: 'vault-v1', d: out });
+    } catch (_) {
+      return JSON.stringify(obj);
+    }
+  }
+
+  function decryptPayload(raw) {
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.v === 2 && parsed.d) {
+        let dec = '';
+        const hex = parsed.d;
+        for (let i = 0; i < hex.length; i += 2) {
+          const byte = parseInt(hex.substr(i, 2), 16);
+          const charIdx = i / 2;
+          const orig = byte ^ VAULT_SALT.charCodeAt(charIdx % VAULT_SALT.length) ^ ((charIdx * 7 + 13) & 0xff);
+          dec += String.fromCharCode(orig);
+        }
+        return JSON.parse(dec);
+      }
+      return parsed; // legacy unencrypted fallback
+    } catch (_) {
+      return null;
+    }
+  }
+
   function readLocal(id) {
     try {
-      const d = JSON.parse(localStorage.getItem(LS_BOARD(id)));
+      const d = decryptPayload(localStorage.getItem(LS_BOARD(id)));
       if (d && Array.isArray(d.deposits)) {
         return d.deposits
           .map((x, i) => ({ k: x.k || `local-${Number(x.t) || 0}-${i}`, c: Number(x.c) || 0, t: Number(x.t) || 0 }))
@@ -28,7 +64,7 @@
   }
 
   const writeLocal = (id, list) => {
-    try { localStorage.setItem(LS_BOARD(id), JSON.stringify({ deposits: list })); } catch (err) { /* storage full */ }
+    try { localStorage.setItem(LS_BOARD(id), encryptPayload({ deposits: list })); } catch (err) { /* storage full */ }
   };
 
   // does the database exist? 404 = not created yet; anything else (even offline) = go live

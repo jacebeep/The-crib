@@ -1900,6 +1900,61 @@ body.cine-active .btn-skip-cine {
   animation: ps-fade-up 0.9s var(--ease-luxury) 0.7s backwards;
 }
 
+/* Locked / Unlocked Community Board trigger */
+.ps-community {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ps-community.locked {
+  opacity: 0.68;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.ps-community.locked:hover {
+  opacity: 0.95;
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.ps-community .cb-lock-icon {
+  font-size: 0.82rem;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.3));
+}
+
+.ps-community .cb-lock-tag {
+  font-size: 0.58rem;
+  letter-spacing: 1px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  margin-left: 2px;
+}
+
+.ps-community.unlocked {
+  opacity: 1;
+  border-color: rgba(212, 175, 55, 0.45);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.15);
+}
+
+.ps-community.unlocked .cb-lock-icon {
+  display: none;
+}
+
+.ps-community.unlocked .cb-lock-tag {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #86efac;
+}
+
 .ps-hint {
   font-size: 0.72rem;
   color: var(--txt-muted);
