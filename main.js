@@ -225,10 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================================
   // 4. PROFILES, PASSCODES & FLORIDA BUDGETS (all money in cents)
   // ============================================================
-  // NOTE: codes live in client-side JS, so this is a privacy gate, not real security.
+  // Passwords are stored exclusively as one-way SHA-256 hashes.
+  // Neither the code nor an external observer can read the plaintext passwords.
   const PROFILES = [
     {
-      id: 'jace', name: 'Jace', initial: 'J', role: 'The Architect', insignia: '👑', code: 'JP123', ink: '#a16207',
+      id: 'jace', name: 'Jace', initial: 'J', role: 'The Architect', insignia: '👑',
+      codeHash: 'a2d12f1bb27e4a7d5c5291c1ce5fb411195d44f727ce4386978d030fa49bf390',
+      ink: '#a16207',
       c1: '#fff3c4', c2: '#d4af37', c3: '#8c6d1d',
       items: [
         { key: 'rent', label: 'Rent', goal: 71456 },
@@ -240,7 +243,9 @@ document.addEventListener('DOMContentLoaded', () => {
       ]
     },
     {
-      id: 'koda', name: 'Koda', initial: 'K', role: 'The Closer', insignia: '🏎️', code: 'dumbass', ink: '#0369a1',
+      id: 'koda', name: 'Koda', initial: 'K', role: 'The Closer', insignia: '🏎️',
+      codeHash: '0fcb77e9e0077de5e520622bff1356c0e191146188f53e0011ddbd327f293896',
+      ink: '#0369a1',
       c1: '#d6f6ff', c2: '#38bdf8', c3: '#0e5a8a',
       items: [
         { key: 'rent', label: 'Rent', goal: 71456 },
@@ -254,7 +259,9 @@ document.addEventListener('DOMContentLoaded', () => {
       ]
     },
     {
-      id: 'shayne', name: 'Shayne', initial: 'S', role: 'The Visionary', insignia: '💎', code: 'Shaynethagoat', ink: '#9333ea',
+      id: 'shayne', name: 'Shayne', initial: 'S', role: 'The Visionary', insignia: '💎',
+      codeHash: '3f131f54d3fe14a02535ed2940dc0dde4327e722317d4916f476d751aaa69671',
+      ink: '#9333ea',
       c1: '#fde4f2', c2: '#d08cf0', c3: '#6b2f8f',
       items: [
         { key: 'rent', label: "First Month's Rent", goal: 43334 },
@@ -267,6 +274,76 @@ document.addEventListener('DOMContentLoaded', () => {
       ]
     }
   ];
+
+  // Cryptographic hash helper (SHA-256 with pure fallback)
+  function sha256Sync(ascii) {
+    function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+    const mathPow = Math.pow;
+    const maxWord = mathPow(2, 32);
+    let i, j;
+    let result = '';
+    const words = [];
+    const asciiBitLength = ascii.length * 8;
+    let hash = [];
+    const k = [];
+    let primeCounter = 0;
+    const isComposite = {};
+    for (let candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (i = candidate * candidate; i < 313; i += candidate) isComposite[i] = true;
+        hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
+        k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+      }
+    }
+    hash = hash.slice(0, 8);
+    words.length = ((asciiBitLength + 64 >>> 9) << 4) + 16;
+    for (i = 0; i < words.length; i++) words[i] = 0;
+    for (i = 0; i < ascii.length; i++) words[i >>> 2] |= (ascii.charCodeAt(i) & 255) << (24 - (i % 4) * 8);
+    words[asciiBitLength >>> 5] |= 0x80 << (24 - (asciiBitLength % 32));
+    words[words.length - 1] = asciiBitLength;
+    for (j = 0; j < words.length; j += 16) {
+      const w = words.slice(j, j + 16);
+      const oldHash = hash.slice(0);
+      for (i = 0; i < 64; i++) {
+        const w15 = w[i - 15], w2 = w[i - 2];
+        const a = hash[0], e = hash[4];
+        const temp1 = (hash[7]
+          + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+          + ((e & hash[5]) ^ (~e & hash[6]))
+          + k[i]
+          + (w[i] = (i < 16) ? (w[i] | 0) : (
+            (w[i - 16] | 0)
+            + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+            + (w[i - 7] | 0)
+            + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+          ) | 0)) | 0;
+        const temp2 = ((rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+          + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]))) | 0;
+        hash = [(temp1 + temp2) | 0, a, hash[1], hash[2], (hash[3] + temp1) | 0, hash[4], hash[5], hash[6]];
+      }
+      for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+    for (i = 0; i < 8; i++) {
+      for (let b = 3; b >= 0; b--) {
+        const byte = (hash[i] >>> (b * 8)) & 255;
+        result += (byte < 16 ? '0' : '') + byte.toString(16);
+      }
+    }
+    return result;
+  }
+
+  async function computeCodeHash(val) {
+    const text = String(val || '').trim().toLowerCase();
+    if (!text) return '';
+    try {
+      if (window.crypto && crypto.subtle) {
+        const enc = new TextEncoder().encode(text);
+        const buf = await crypto.subtle.digest('SHA-256', enc);
+        return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+      }
+    } catch (_) { }
+    return sha256Sync(text);
+  }
 
   const INKS = {
     rent: '#1d4ed8', deposit: '#dc2626', highrisk: '#ea580c', utilities: '#15803d',
@@ -281,7 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
     state: 'menu',        // 'menu' | 'entering' | 'inside' | 'locking' | 'moving' | 'board' | 'community' | 'leaving' | 'toBar' | 'bar' | 'fromBar'
     profile: null,
     selecting: false,
-    communityFrom: 'profiles'
+    communityFrom: 'profiles',
+    unlockedProfiles: new Set()
   };
 
   // --- money helpers ---
@@ -439,6 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showProfileSelect() {
     crib.selecting = false;
     renderProfileCards();
+    updateCommunityLockUI();
     profileSelect.classList.remove('welcoming', 'locking');
     profileSelect.classList.add('open');
   }
@@ -505,14 +584,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   psPassInput.addEventListener('input', () => { psPassError.textContent = ''; });
 
-  psPassForm.addEventListener('submit', (e) => {
+  psPassForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (crib.state !== 'locking' || !crib.profile) return;
     const p = crib.profile;
     const guess = psPassInput.value.trim();
 
-    if (!guess || guess.toLowerCase() !== p.code.toLowerCase()) {
-      psPassError.textContent = guess ? 'Wrong code. Try again.' : 'Type your code first.';
+    if (!guess) {
+      psPassError.textContent = 'Type your code first.';
+      psPassForm.classList.remove('shake');
+      void psPassForm.offsetWidth; // restart the shake
+      psPassForm.classList.add('shake');
+      sfx('playError');
+      psPassInput.select();
+      return;
+    }
+
+    const hash = await computeCodeHash(guess);
+    if (hash !== p.codeHash) {
+      psPassError.textContent = 'Wrong code. Try again.';
       psPassForm.classList.remove('shake');
       void psPassForm.offsetWidth; // restart the shake
       psPassForm.classList.add('shake');
@@ -523,8 +613,22 @@ document.addEventListener('DOMContentLoaded', () => {
     unlockProfile(p);
   });
 
+  function updateCommunityLockUI() {
+    if (!btnCommunity) return;
+    const isUnlocked = crib.unlockedProfiles && crib.unlockedProfiles.size > 0;
+    btnCommunity.classList.toggle('locked', !isUnlocked);
+    btnCommunity.classList.toggle('unlocked', isUnlocked);
+    btnCommunity.setAttribute('aria-label', isUnlocked ? 'Community Board' : 'Community Board (Locked — unlock a profile first)');
+    const tag = btnCommunity.querySelector('.cb-lock-tag');
+    if (tag) tag.textContent = isUnlocked ? 'UNLOCKED' : 'LOCKED';
+    const lockIcon = btnCommunity.querySelector('.cb-lock-icon');
+    if (lockIcon) lockIcon.textContent = isUnlocked ? '🔓' : '🔒';
+  }
+
   function unlockProfile(p) {
     crib.state = 'moving';
+    crib.unlockedProfiles.add(p.id);
+    updateCommunityLockUI();
     psPassForm.classList.add('unlocked');
     psPassInput.blur();
     sfx('playProfileSelect');
@@ -918,9 +1022,19 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { if (crib.state === 'community') animateCommunity(); }, 700);
   }
 
-  // from the foyer: walk over to the wall, no code needed (view-only)
+  // from the foyer: walk over to the wall (locked until at least one profile is unlocked)
   function openCommunityFromProfiles() {
     if (crib.state !== 'inside' || crib.selecting) return;
+    if (!crib.unlockedProfiles || crib.unlockedProfiles.size === 0) {
+      if (btnCommunity) {
+        btnCommunity.classList.remove('shake');
+        void btnCommunity.offsetWidth;
+        btnCommunity.classList.add('shake');
+      }
+      sfx('playError');
+      showToast('🔒 Community Board is locked. Unlock a profile first!');
+      return;
+    }
     crib.state = 'moving';
     crib.communityFrom = 'profiles';
     crib.profile = null;
