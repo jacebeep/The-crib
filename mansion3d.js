@@ -102,6 +102,11 @@
       this.insidePose = { pos: new THREE.Vector3(1.6, 1.65, 6.2), look: new THREE.Vector3(-2.5, 1.55, -8), sway: 1 };
       // facing the overview whiteboard on the west wall
       this.boardPose = { pos: new THREE.Vector3(-9.4, 2.1, 6.5), look: new THREE.Vector3(-13.7, 2.1, 6.5), sway: 0.3 };
+      // sitting at "The Ledger" bar, across the counter from Marcus (framing depends on screen shape)
+      this.barPose = { pos: new THREE.Vector3(), look: new THREE.Vector3(), sway: 0.12 };
+      this.updateBarPose();
+      this.barReturnPose = null;
+      this.lastT = 0;
       this.restPose = this.insidePose;
 
       this.initRenderer();
@@ -150,9 +155,23 @@
       this._look.copy(this.camTarget);
     }
 
+    // wide screens: Marcus sits left of centre (chat panel on the right); tall phones: he sits up top (chat below)
+    updateBarPose() {
+      const aspect = window.innerWidth / window.innerHeight;
+      const p = this.barPose;
+      if (aspect >= 1.05) {
+        p.pos.set(-5.45, 2.02, 1.35);
+        p.look.set(-6.2, 1.93, 3.62);
+      } else {
+        p.pos.set(-5.8, 2.06, 0.85);
+        p.look.set(-5.8, 1.6, 3.62);
+      }
+    }
+
     onResize() {
       const w = window.innerWidth, h = window.innerHeight;
       const aspect = w / h;
+      if (this.barPose) this.updateBarPose();
       this.renderer.setSize(w, h);
       this.camera.aspect = aspect;
       // Tall phone screens: widen the vertical FOV so the house still fits side to side.
@@ -928,6 +947,15 @@
       this.plant(villa, -13.1, f0, -5.2, 1.7);
 
       this.buildWhiteboard(villa);
+
+      // "The Ledger" home bar + Marcus, the AI bartender (bar3d.js)
+      if (window.CribBar) {
+        try {
+          this.bar = new window.CribBar(this, villa, f0);
+        } catch (e) {
+          console.warn('Bar failed to build:', e);
+        }
+      }
     }
 
     // ============================================================
@@ -1683,6 +1711,15 @@
         startPos = inside.pos.clone();
         startLook = inside.look.clone();
         offset = 1.8;
+      } else if (this.restPose === this.barPose) {
+        // get up from the bar and head back to the foyer first
+        pre.push({ dur: 2.2, ease: 'inOutCubic',
+          pos: [startPos, V(-2.6, 1.7, 1.2), V(-0.8, 1.75, 3.6), inside.pos.clone()],
+          look: [startLook, V(-4.5, 1.6, -1), inside.look.clone()] });
+        startPos = inside.pos.clone();
+        startLook = inside.look.clone();
+        offset = 2.2;
+        if (this.bar) { this.bar.setEngaged(false); this.bar.setLights(0.45); }
       }
       this.restPose = inside;
       const segments = pre.concat([
@@ -1726,6 +1763,49 @@
         look: [this._look.clone(), V(-6, 1.8, -4), p.look.clone()] }], [], onEvent, 'inside');
     }
 
+    // foyer / whiteboard -> a slow cinematic pan across the room that settles on a stool at the bar
+    goToBar(onEvent) {
+      if (this.cine || this.mode !== 'inside' || this.restPose === this.barPose) return Promise.resolve();
+      this.mode = 'cine';
+      const V = (x, y, z) => new THREE.Vector3(x, y, z);
+      this.updateBarPose();
+      const bp = this.barPose;
+      const fromBoard = this.restPose === this.boardPose;
+      this.barReturnPose = this.restPose;
+      this.restPose = bp;
+      const segments = fromBoard
+        ? [{ dur: 4.2, ease: 'inOutCubic',
+          pos: [this.camera.position.clone(), V(-10.0, 1.95, 3.6), V(-9.2, 1.8, 0.4), V(-7.2, 1.95, 0.6), bp.pos.clone()],
+          look: [this._look.clone(), V(-11.5, 1.8, -0.5), V(-7.8, 1.7, 3.2), V(-6.4, 1.85, 3.8), bp.look.clone()] }]
+        : [{ dur: 4.4, ease: 'inOutCubic',
+          pos: [this.camera.position.clone(), V(-0.6, 1.85, 3.9), V(-2.2, 1.75, 0.6), V(-4.0, 1.95, 0.5), bp.pos.clone()],
+          look: [this._look.clone(), V(-3.2, 1.6, -2.5), V(-6.6, 1.7, 1.6), V(-6.5, 1.85, 3.8), bp.look.clone()] }];
+      const events = [
+        { at: 0.3, name: 'barLights', fn: () => { if (this.bar) { this.bar.setLights(1); this.bar.setEngaged(true); } } },
+        { at: 2.9, name: 'barGreet', fn: (i) => { if (this.bar && !i) this.bar.greet(); } }
+      ];
+      return this.runCinematic(segments, events, onEvent, 'inside');
+    }
+
+    // bar -> wherever you came from
+    leaveBar(onEvent) {
+      if (this.cine || this.mode !== 'inside' || this.restPose !== this.barPose) return Promise.resolve();
+      this.mode = 'cine';
+      const V = (x, y, z) => new THREE.Vector3(x, y, z);
+      const back = this.barReturnPose || this.insidePose;
+      this.restPose = back;
+      const toBoard = back === this.boardPose;
+      const segments = toBoard
+        ? [{ dur: 3.2, ease: 'inOutCubic',
+          pos: [this.camera.position.clone(), V(-7.2, 1.9, 0.6), V(-9.6, 1.85, 1.8), back.pos.clone()],
+          look: [this._look.clone(), V(-9.5, 1.8, 2.6), V(-12.5, 1.9, 5.4), back.look.clone()] }]
+        : [{ dur: 3.2, ease: 'inOutCubic',
+          pos: [this.camera.position.clone(), V(-3.4, 1.8, 0.7), V(-0.8, 1.75, 3.6), back.pos.clone()],
+          look: [this._look.clone(), V(-3.5, 1.7, -1.5), back.look.clone()] }];
+      const events = [{ at: 0.2, name: 'barLeave', fn: () => { if (this.bar) { this.bar.setEngaged(false); this.bar.setLights(0.45); } } }];
+      return this.runCinematic(segments, events, onEvent, 'inside');
+    }
+
     skipCinematic() {
       if (!this.cine) return;
       this.cine.skipped = true;
@@ -1740,6 +1820,8 @@
     // ============================================================
     animate() {
       const t = this.clock.getElapsedTime();
+      const dt = t - this.lastT;
+      this.lastT = t;
       this.now = t;
 
       // gentle camera drift + mouse parallax (like a slow drone hover)
@@ -1798,6 +1880,7 @@
       if (this.ocean) this.ocean.material.uniforms.time.value = t * 0.55;
       this.tex.poolNormals.offset.set((t * 0.02) % 1, (t * 0.013) % 1);
       this.grassUniforms.uTime.value = t;
+      if (this.bar) this.bar.update(t, dt, this.camera);
 
       // palms: trunk sway + frond flutter in the sea breeze
       for (const p of this.palms) {

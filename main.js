@@ -194,8 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if (crib.state === 'entering' || crib.state === 'leaving' || crib.state === 'moving') {
+      if (crib.state === 'entering' || crib.state === 'leaving' || crib.state === 'moving' || crib.state === 'toBar' || crib.state === 'fromBar') {
         skipCinematic();
+        return;
+      }
+      if (crib.state === 'bar') {
+        closeBar();
         return;
       }
       if (crib.state === 'locking') {
@@ -273,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const crib = {
-    state: 'menu',        // 'menu' | 'entering' | 'inside' | 'locking' | 'moving' | 'board' | 'community' | 'leaving'
+    state: 'menu',        // 'menu' | 'entering' | 'inside' | 'locking' | 'moving' | 'board' | 'community' | 'leaving' | 'toBar' | 'bar' | 'fromBar'
     profile: null,
     selecting: false,
     communityFrom: 'profiles'
@@ -965,6 +969,75 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-community-leave').addEventListener('click', leaveCrib);
 
   // ============================================================
+  // 6c. THE LEDGER — Marcus, the AI bartender
+  // ============================================================
+  // live snapshot of the guest's Florida board so Marcus can weigh every purchase against it
+  function marcusContext() {
+    const p = crib.profile;
+    if (!p) return { id: 'guest' };
+    const d = loadBoard(p.id);
+    const saved = savedOf(d);
+    const alloc = allocate(saved, p.items);
+    const deps = d.deposits.filter((x) => Number(x.c) > 0).slice().sort((a, b) => (a.t || 0) - (b.t || 0));
+    const first = deps.length ? Number(deps[0].t) || Date.now() : 0;
+    const days = first ? Math.max(7, (Date.now() - first) / 86400000) : 0;
+    return {
+      id: p.id,
+      name: p.name,
+      role: p.role,
+      goalCents: goalOf(p),
+      savedCents: saved,
+      items: p.items.map((it, i) => ({ label: it.label, goal: it.goal, saved: alloc[i] })),
+      deposits: deps.slice(-8).map((x) => ({ c: Number(x.c), t: Number(x.t) || Date.now() })),
+      depositCount: deps.length,
+      perDayCents: days ? saved / days : 0
+    };
+  }
+
+  function openBar() {
+    if (crib.state !== 'inside' && crib.state !== 'board') return;
+    crib.barFrom = crib.state;
+    crib.state = 'toBar';
+    sfx('playClick');
+    if (crib.barFrom === 'board') {
+      closeBoard();
+    } else {
+      hideProfileSelect();
+    }
+    cineCaptionKicker.textContent = 'NOW SEATED';
+    const scene = window.luxury3d;
+    const walk = scene && scene.goToBar ? scene.goToBar((name) => { if (name === 'barLights') sfx('playWhoosh', 2.6); }) : Promise.resolve();
+    walk.then(() => {
+      if (crib.state !== 'toBar') return;
+      crib.state = 'bar';
+      if (window.marcus) window.marcus.open(marcusContext());
+    });
+  }
+
+  function closeBar() {
+    if (crib.state !== 'bar') return;
+    crib.state = 'fromBar';
+    if (window.marcus) window.marcus.close();
+    sfx('playHover');
+    const scene = window.luxury3d;
+    const walk = scene && scene.leaveBar ? scene.leaveBar() : Promise.resolve();
+    walk.then(() => {
+      if (crib.barFrom === 'board' && crib.profile) {
+        crib.state = 'moving';
+        openBoard();
+      } else {
+        crib.state = 'inside';
+        crib.profile = null;
+        showProfileSelect();
+      }
+    });
+  }
+
+  $('btn-bar').addEventListener('click', openBar);
+  $('btn-board-bar').addEventListener('click', openBar);
+  window.addEventListener('marcus:back', closeBar);
+
+  // ============================================================
   // 7. ENTRANCE / EXIT CINEMATICS
   // ============================================================
   function onCineEvent(name) {
@@ -992,7 +1065,17 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.remove('cine-active');
       document.body.classList.add('in-crib');
       showProfileSelect();
+      // ?bar in the URL jumps straight to Marcus (handy for testing)
+      if (DEBUG_BAR) setTimeout(openBar, 200);
     });
+  }
+
+  const DEBUG_BAR = new URLSearchParams(location.search).has('bar');
+  if (DEBUG_BAR) {
+    setTimeout(() => {
+      enterCrib();
+      skipCinematic();
+    }, 600);
   }
 
   function leaveCrib() {

@@ -1,5 +1,7 @@
-﻿Thumbs.db
+Thumbs.db
 desktop.ini
 .DS_Store
 node_modules/
 *.log
+# Gemini API key (local only)
+gemini-config.js
